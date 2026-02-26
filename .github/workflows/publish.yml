@@ -33,26 +33,18 @@ jobs:
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: true
 
-      # 🔥 Remove qualquer auth de npmrc (user/repo) pra não cair em token revogado
-      - name: Sanitize npm auth config
+      # Remove configs antigas e qualquer token fantasma
+      - name: Sanitize npm config
         run: |
           rm -f ~/.npmrc .npmrc || true
           npm config delete //registry.npmjs.org/:_authToken || true
           npm config delete always-auth || true
           npm config set registry https://registry.npmjs.org/
-          echo "npm registry: $(npm config get registry)"
-          echo "npm token set? -> $(npm config get //registry.npmjs.org/:_authToken || true)"
 
-      # (opcional) Diagnóstico: mostra configs relevantes
-      - name: Debug npm config
-        run: |
-          npm config list -l | sed -n '1,200p'
-
-      # ✅ Publish via OIDC + provenance (sem token)
+      # Publish via OIDC (Trusted Publishing)
       - name: Publish to npm (OIDC)
         run: npm publish --access public --provenance
         env:
-          # garante que nenhum token seja passado por acidente
           NODE_AUTH_TOKEN: ""
           NPM_TOKEN: ""
 
