@@ -12,9 +12,10 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -22,17 +23,17 @@ jobs:
         run: git fetch --tags -f || true
 
       - name: Setup Node
-        uses: actions/setup-node@v6.2.0
+        uses: actions/setup-node@v4
         with:
           node-version: '24.14.0'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Get npm cache directory
         id: npm-cache
-        run: |
-          echo "dir=$(npm config get cache)" >> $GITHUB_OUTPUT
+        run: echo "dir=$(npm config get cache)" >> $GITHUB_OUTPUT
+
       - name: Setup npm cache
-        uses: actions/cache@v5
+        uses: actions/cache@v4
         with:
           path: ${{ steps.npm-cache.outputs.dir }}
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
@@ -46,6 +47,8 @@ jobs:
 
       - name: Publish in NPM
         run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Generate Changelog
         id: generate_changelog
@@ -67,12 +70,13 @@ jobs:
           body: ${{ steps.generate_changelog.outputs.changelog }}
           draft: false
           prerelease: false
-          files: >
+          files: |
             dist/wppconnect-wa.js
           gzip: folders
           allow_override: true
 
       - name: Update WPPConnect Site
+        if: ${{ secrets.PERSONAL_TOKEN != '' }}
         run: gh workflow run update-blog.yml --repo wppconnect-team/wppconnect-team.github.io
         continue-on-error: true
         env:
